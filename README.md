@@ -8,6 +8,10 @@ Open **[Whist Scorekeeper](https://joaopedra-amdg.github.io/Whist/)** in your br
 
 Games are saved on each device separately; the web app does not sync scores between phones.
 
+## Change the app icon
+
+Replace `assets/branding/whist-cards.png` with a new PNG, then run `./tool/generate_icons.ps1` in PowerShell. The script creates the web, Android, iOS, macOS, and Windows icons from that image. Commit and push the updated files to publish the web icon. If an existing home screen shortcut still shows the old icon, remove it and add it again after the site updates.
+
 ## Run
 
 Install Flutter 3.29 or newer, then from this folder:
