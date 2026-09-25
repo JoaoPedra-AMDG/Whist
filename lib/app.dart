@@ -3,18 +3,21 @@ import 'logic/game_controller.dart';
 import 'screens/home_screen.dart';
 
 class WhistApp extends StatefulWidget {
-  const WhistApp({super.key});
+  const WhistApp({super.key, this.gameController});
+
+  final GameController? gameController;
 
   @override
   State<WhistApp> createState() => _WhistAppState();
 }
 
 class _WhistAppState extends State<WhistApp> {
-  final GameController controller = GameController();
+  late final GameController controller;
 
   @override
   void initState() {
     super.initState();
+    controller = widget.gameController ?? GameController();
     controller.load();
   }
 

@@ -18,7 +18,7 @@ flutter analyze
 flutter test
 ```
 
-Android and iOS project files are included. iOS builds require macOS and Xcode.
+Android, iOS, Windows, macOS, Linux, and web project files are included. iOS builds require macOS and Xcode.
 
 ## Structure
 
@@ -28,7 +28,7 @@ Android and iOS project files are included. iOS builds require macOS and Xcode.
 - `lib/screens`: setup, play, corrections, score sheet, results, and rules.
 - `test`: rules, scoring, correction, and serialization tests.
 
-The game history is the source of truth. Totals are recalculated from completed rounds whenever shown. Draft calls and results are saved after each selection. Android uses SharedPreferences and iOS uses UserDefaults through a small method channel, so no account, network access, or third-party package is required at runtime.
+The game history is the source of truth. Totals are recalculated from completed rounds whenever shown. Draft calls and results are saved after each selection. Android uses SharedPreferences and iOS uses UserDefaults; desktop builds save a local JSON file and web uses browser storage. The only runtime dependency is the Dart `web` package for browser storage. No account or network access is required. A failed save leaves the last confirmed round intact and shows details and retry steps.
 
 ## Rules assumption
 

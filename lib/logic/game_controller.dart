@@ -14,8 +14,8 @@ class GameController extends ChangeNotifier {
   Future<void> load() async {
     try {
       game = await _storage.load();
-    } catch (_) {
-      loadError = 'The saved game could not be opened.';
+    } catch (error) {
+      loadError = '$error';
     } finally {
       loading = false;
       notifyListeners();
@@ -23,13 +23,14 @@ class GameController extends ChangeNotifier {
   }
 
   Future<void> start(List<String> players, int cards) async {
-    game = WhistGame(
+    final next = WhistGame(
       players: List.of(players),
       startingCards: cards,
       rounds: generateRounds(cards),
     );
+    await _storage.save(next);
+    game = next;
     notifyListeners();
-    await _storage.save(game!);
   }
 
   Future<void> saveDraft(
@@ -37,7 +38,8 @@ class GameController extends ChangeNotifier {
     Map<int, int> calls,
     Map<int, int> wins,
   ) async {
-    final round = game!.rounds[index];
+    final next = WhistGame.fromJson(game!.toJson());
+    final round = next.rounds[index];
     if (round.completed) return;
     round.calls
       ..clear()
@@ -45,8 +47,9 @@ class GameController extends ChangeNotifier {
     round.wins
       ..clear()
       ..addAll(wins);
+    await _storage.save(next);
+    game = next;
     notifyListeners();
-    await _storage.save(game!);
   }
 
   Future<void> commit(
@@ -54,7 +57,8 @@ class GameController extends ChangeNotifier {
     Map<int, int> calls,
     Map<int, int> wins,
   ) async {
-    final round = game!.rounds[index];
+    final next = WhistGame.fromJson(game!.toJson());
+    final round = next.rounds[index];
     round.calls
       ..clear()
       ..addAll(calls);
@@ -62,7 +66,8 @@ class GameController extends ChangeNotifier {
       ..clear()
       ..addAll(wins);
     round.completed = true;
+    await _storage.save(next);
+    game = next;
     notifyListeners();
-    await _storage.save(game!);
   }
 }
