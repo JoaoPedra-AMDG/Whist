@@ -3,6 +3,7 @@ import '../logic/game_controller.dart';
 import 'game_screen.dart';
 import 'game_setup_screen.dart';
 import 'rules_screen.dart';
+import '../theme/whist_theme.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key, required this.controller});
@@ -50,41 +51,93 @@ class HomeScreen extends StatelessWidget {
     builder: (context, _) {
       final game = controller.game;
       return Scaffold(
-        appBar: AppBar(title: const Text('Whist')),
         body: SafeArea(
           child: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 520),
               child: Padding(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Spacer(),
-                    Icon(
-                      Icons.style_outlined,
-                      size: 64,
-                      color: Theme.of(context).colorScheme.primary,
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.style_rounded,
+                          size: 22,
+                          color: WhistPalette.accent,
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          'WHIST',
+                          style: Theme.of(
+                            context,
+                          ).textTheme.titleMedium?.copyWith(letterSpacing: 1.5),
+                        ),
+                        const Spacer(),
+                        Text(
+                          'SCOREKEEPER',
+                          style: Theme.of(context).textTheme.labelLarge,
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 24),
-                    Text(
-                      'Keep the cards on the table.',
-                      style: Theme.of(context).textTheme.headlineMedium,
-                      textAlign: TextAlign.center,
+                    const SizedBox(height: 18),
+                    Flexible(
+                      fit: FlexFit.loose,
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxHeight:
+                              MediaQuery.sizeOf(context).height < 700
+                                  ? 130
+                                  : 220,
+                        ),
+                        child: LayoutBuilder(
+                          builder:
+                              (context, box) => Card(
+                                child: Center(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(12),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          'Keep the cards on the table.',
+                                          style:
+                                              Theme.of(
+                                                context,
+                                              ).textTheme.headlineSmall,
+                                          textAlign: TextAlign.center,
+                                        ),
+                                        if (box.maxHeight >= 200) ...[
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            'Calls, tricks, and scores in one quiet place.',
+                                            style:
+                                                Theme.of(
+                                                  context,
+                                                ).textTheme.bodyMedium,
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 12),
-                    Text(
-                      'Calls, tricks, and scores in one quiet place.',
-                      style: Theme.of(context).textTheme.bodyLarge,
-                      textAlign: TextAlign.center,
-                    ),
-                    const Spacer(),
                     if (controller.loading)
                       const Center(child: CircularProgressIndicator()),
                     if (controller.loadError != null)
                       Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
-                        child: Text(controller.loadError!),
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Text(
+                          controller.loadError!,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     if (!controller.loading &&
                         game != null &&
@@ -108,7 +161,7 @@ class HomeScreen extends StatelessWidget {
                     if (!controller.loading &&
                         game != null &&
                         game.isFinished) ...[
-                      OutlinedButton(
+                      FilledButton.icon(
                         onPressed:
                             () => Navigator.push(
                               context,
@@ -117,27 +170,46 @@ class HomeScreen extends StatelessWidget {
                                     (_) => GameScreen(controller: controller),
                               ),
                             ),
-                        child: const Text('View final results'),
+                        icon: const Icon(Icons.emoji_events_outlined),
+                        label: const Text('View final results'),
                       ),
                       const SizedBox(height: 12),
                     ],
-                    FilledButton.tonalIcon(
-                      onPressed:
-                          controller.loading ? null : () => _newGame(context),
-                      icon: const Icon(Icons.add),
-                      label: const Text('New game'),
-                    ),
-                    const SizedBox(height: 12),
-                    TextButton.icon(
-                      onPressed:
-                          () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const RulesScreen(),
+                    if (game == null)
+                      FilledButton.icon(
+                        onPressed:
+                            controller.loading ? null : () => _newGame(context),
+                        icon: const Icon(Icons.add),
+                        label: const Text('New game'),
+                      ),
+                    if (game == null) const SizedBox(height: 12),
+                    Card(
+                      child: Column(
+                        children: [
+                          if (game != null) ...[
+                            _MenuRow(
+                              icon: Icons.add_circle_outline,
+                              label: 'New game',
+                              onTap:
+                                  controller.loading
+                                      ? null
+                                      : () => _newGame(context),
                             ),
+                            const Divider(height: 1),
+                          ],
+                          _MenuRow(
+                            icon: Icons.menu_book_outlined,
+                            label: 'How to play',
+                            onTap:
+                                () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const RulesScreen(),
+                                  ),
+                                ),
                           ),
-                      icon: const Icon(Icons.menu_book_outlined),
-                      label: const Text('How to play'),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -147,5 +219,36 @@ class HomeScreen extends StatelessWidget {
         ),
       );
     },
+  );
+}
+
+class _MenuRow extends StatelessWidget {
+  const _MenuRow({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+    onTap: onTap,
+    borderRadius: BorderRadius.circular(12),
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: WhistPalette.accent),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Text(label, style: Theme.of(context).textTheme.titleMedium),
+          ),
+          const Icon(Icons.chevron_right, color: WhistPalette.textMuted),
+        ],
+      ),
+    ),
   );
 }

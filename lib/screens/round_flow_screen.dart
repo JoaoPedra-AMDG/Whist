@@ -3,6 +3,7 @@ import '../logic/game_controller.dart';
 import '../logic/game_rules.dart';
 import '../logic/scoring.dart';
 import '../models/game.dart';
+import '../theme/whist_theme.dart';
 
 enum RoundStage { calls, callsReady, results, summary }
 
@@ -350,32 +351,48 @@ class _RoundFlowScreenState extends State<RoundFlowScreen> {
                           crossAxisSpacing: 6,
                         ),
                         itemCount: _cards + 1,
-                        itemBuilder:
-                            (context, value) => OutlinedButton(
-                              style: OutlinedButton.styleFrom(
-                                padding: EdgeInsets.zero,
-                                backgroundColor:
-                                    (isCalls
-                                                ? _calls[_person]
-                                                : _wins[_person]) ==
-                                            value
-                                        ? Theme.of(
-                                          context,
-                                        ).colorScheme.primaryContainer
-                                        : null,
-                              ),
-                              onPressed:
-                                  _busy || (isCalls && value == forbidden)
-                                      ? null
-                                      : () =>
-                                          isCalls
-                                              ? _chooseCall(value)
-                                              : _chooseWin(value),
-                              child: Text(
-                                '$value',
-                                style: Theme.of(context).textTheme.titleLarge,
+                        itemBuilder: (context, value) {
+                          final selected =
+                              (isCalls ? _calls[_person] : _wins[_person]) ==
+                              value;
+                          return OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              padding: EdgeInsets.zero,
+                              backgroundColor:
+                                  selected
+                                      ? WhistPalette.accent
+                                      : WhistPalette.surface,
+                              foregroundColor:
+                                  selected
+                                      ? WhistPalette.background
+                                      : WhistPalette.text,
+                              side: BorderSide(
+                                color:
+                                    selected
+                                        ? WhistPalette.accent
+                                        : WhistPalette.outline,
                               ),
                             ),
+                            onPressed:
+                                _busy || (isCalls && value == forbidden)
+                                    ? null
+                                    : () =>
+                                        isCalls
+                                            ? _chooseCall(value)
+                                            : _chooseWin(value),
+                            child: Text(
+                              '$value',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                                color:
+                                    selected
+                                        ? WhistPalette.background
+                                        : WhistPalette.text,
+                              ),
+                            ),
+                          );
+                        },
                       );
                     },
                   )

@@ -5,6 +5,7 @@ import 'final_results_screen.dart';
 import 'round_flow_screen.dart';
 import 'rules_screen.dart';
 import 'score_sheet_screen.dart';
+import '../theme/whist_theme.dart';
 
 class GameScreen extends StatefulWidget {
   const GameScreen({super.key, required this.controller});
@@ -74,12 +75,16 @@ class _GameScreenState extends State<GameScreen> {
                       children: [
                         Text(
                           'ROUND ${index + 1} OF ${game.rounds.length}',
-                          style: Theme.of(
-                            context,
-                          ).textTheme.labelLarge?.copyWith(letterSpacing: 1.5),
+                          style: Theme.of(context).textTheme.labelLarge,
                         ),
                         Row(
                           children: [
+                            const Icon(
+                              Icons.style_outlined,
+                              color: WhistPalette.accent,
+                              size: 24,
+                            ),
+                            const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 '${round.cards} ${round.cards == 1 ? 'card' : 'cards'}',
@@ -94,6 +99,7 @@ class _GameScreenState extends State<GameScreen> {
                           callsReady
                               ? 'Play, then enter tricks won.'
                               : 'Collect calls before playing.',
+                          style: Theme.of(context).textTheme.bodyMedium,
                         ),
                         const SizedBox(height: 12),
                         Expanded(
@@ -103,9 +109,33 @@ class _GameScreenState extends State<GameScreen> {
                                 Expanded(
                                   child: Card(
                                     child: Padding(
-                                      padding: const EdgeInsets.all(12),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 8,
+                                      ),
                                       child: Row(
                                         children: [
+                                          Container(
+                                            width: 36,
+                                            height: 36,
+                                            alignment: Alignment.center,
+                                            decoration: BoxDecoration(
+                                              color: WhistPalette.surfaceRaised,
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              border: Border.all(
+                                                color: WhistPalette.outline,
+                                              ),
+                                            ),
+                                            child: Text(
+                                              '${player + 1}',
+                                              style: const TextStyle(
+                                                color: WhistPalette.accent,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
                                           Expanded(
                                             child: Column(
                                               mainAxisAlignment:
@@ -125,6 +155,13 @@ class _GameScreenState extends State<GameScreen> {
                                                 ),
                                                 Text(
                                                   'Called ${round.calls[player]?.toString() ?? '—'} · Won ${round.wins[player]?.toString() ?? '—'}',
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style:
+                                                      Theme.of(
+                                                        context,
+                                                      ).textTheme.bodyMedium,
                                                 ),
                                               ],
                                             ),
@@ -143,9 +180,17 @@ class _GameScreenState extends State<GameScreen> {
                                                     ?.copyWith(
                                                       fontWeight:
                                                           FontWeight.bold,
+                                                      color:
+                                                          WhistPalette.accent,
                                                     ),
                                               ),
-                                              const Text('points'),
+                                              Text(
+                                                'points',
+                                                style:
+                                                    Theme.of(
+                                                      context,
+                                                    ).textTheme.bodyMedium,
+                                              ),
                                             ],
                                           ),
                                         ],
