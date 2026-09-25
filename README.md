@@ -2,6 +2,12 @@
 
 A minimal, offline Flutter scorekeeper for a physical Whist game. The app records calls and tricks, enforces the final caller rule, calculates scores, and allows completed rounds to be corrected.
 
+## Play on a phone
+
+Open **[Whist Scorekeeper](https://joaopedra-amdg.github.io/Whist/)** in your browser. On Android, use Chrome's **Install app** menu item. On iPhone, open the link in Safari and choose **Share → Add to Home Screen**.
+
+Games are saved on each device separately; the web app does not sync scores between phones.
+
 ## Run
 
 Install Flutter 3.29 or newer, then from this folder:
