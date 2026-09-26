@@ -69,7 +69,7 @@ class HomeScreen extends StatelessWidget {
                         ),
                         const SizedBox(width: 10),
                         Text(
-                          'WHIST',
+                          'AMDG',
                           style: Theme.of(
                             context,
                           ).textTheme.titleMedium?.copyWith(letterSpacing: 1.5),
@@ -99,7 +99,7 @@ class HomeScreen extends StatelessWidget {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Text(
-                                    'Whist; The Card Game',
+                                    'Whist - The Card Game',
                                     style:
                                         Theme.of(
                                           context,
