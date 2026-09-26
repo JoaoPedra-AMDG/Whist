@@ -91,39 +91,32 @@ class HomeScreen extends StatelessWidget {
                                   ? 130
                                   : 220,
                         ),
-                        child: LayoutBuilder(
-                          builder:
-                              (context, box) => Card(
-                                child: Center(
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(12),
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          'Keep the cards on the table.',
-                                          style:
-                                              Theme.of(
-                                                context,
-                                              ).textTheme.headlineSmall,
-                                          textAlign: TextAlign.center,
-                                        ),
-                                        if (box.maxHeight >= 200) ...[
-                                          const SizedBox(height: 8),
-                                          Text(
-                                            'Calls, tricks, and scores in one quiet place.',
-                                            style:
-                                                Theme.of(
-                                                  context,
-                                                ).textTheme.bodyMedium,
-                                            textAlign: TextAlign.center,
-                                          ),
-                                        ],
-                                      ],
-                                    ),
+                        child: Card(
+                          child: Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    'Whist; The Card Game',
+                                    style:
+                                        Theme.of(
+                                          context,
+                                        ).textTheme.headlineSmall,
+                                    textAlign: TextAlign.center,
                                   ),
-                                ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'The Pedra\'s Edition',
+                                    style:
+                                        Theme.of(context).textTheme.bodyMedium,
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
                               ),
+                            ),
+                          ),
                         ),
                       ),
                     ),
