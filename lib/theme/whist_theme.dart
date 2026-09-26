@@ -7,6 +7,7 @@ abstract final class WhistPalette {
   static const surfaceRaised = Color(0xFF2B3A52);
   static const accent = Color(0xFFB78BFF);
   static const accentMuted = Color(0xFF54E8D3);
+  static const gold = Color(0xFFFFD166);
   static const text = Color(0xFFF8FAFF);
   static const textMuted = Color(0xFFD1DBE9);
   static const outline = Color(0xFF63748E);
@@ -24,7 +25,7 @@ ThemeData buildWhistTheme() {
     onPrimaryContainer: WhistPalette.text,
     secondary: WhistPalette.accentMuted,
     onSecondary: WhistPalette.background,
-    tertiary: const Color(0xFFFFD166),
+    tertiary: WhistPalette.gold,
     onTertiary: WhistPalette.background,
     surface: WhistPalette.background,
     onSurface: WhistPalette.text,
@@ -99,7 +100,7 @@ ThemeData buildWhistTheme() {
     ),
     chipTheme: ChipThemeData(
       backgroundColor: WhistPalette.surfaceRaised,
-      labelStyle: const TextStyle(color: WhistPalette.accent),
+      labelStyle: const TextStyle(color: WhistPalette.accentMuted),
       side: const BorderSide(color: WhistPalette.outline),
       shape: const RoundedRectangleBorder(borderRadius: radius),
     ),
@@ -109,7 +110,7 @@ ThemeData buildWhistTheme() {
       dataRowColor: const WidgetStatePropertyAll(WhistPalette.surface),
       dividerThickness: 0.6,
       headingTextStyle: const TextStyle(
-        color: WhistPalette.accent,
+        color: WhistPalette.accentMuted,
         fontWeight: FontWeight.w700,
       ),
       dataTextStyle: const TextStyle(color: WhistPalette.text),
@@ -143,7 +144,7 @@ ThemeData buildWhistTheme() {
       bodyLarge: TextStyle(color: WhistPalette.textMuted, fontSize: 16),
       bodyMedium: TextStyle(color: WhistPalette.textMuted, fontSize: 14),
       labelLarge: TextStyle(
-        color: WhistPalette.accent,
+        color: WhistPalette.accentMuted,
         fontSize: 12,
         fontWeight: FontWeight.w700,
         letterSpacing: 1.1,

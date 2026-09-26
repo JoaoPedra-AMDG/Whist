@@ -130,7 +130,7 @@ class _GameScreenState extends State<GameScreen> {
                                             child: Text(
                                               '${player + 1}',
                                               style: const TextStyle(
-                                                color: WhistPalette.accent,
+                                                color: WhistPalette.accentMuted,
                                                 fontWeight: FontWeight.bold,
                                               ),
                                             ),
@@ -181,7 +181,7 @@ class _GameScreenState extends State<GameScreen> {
                                                       fontWeight:
                                                           FontWeight.bold,
                                                       color:
-                                                          WhistPalette.accent,
+                                                          WhistPalette.gold,
                                                     ),
                                               ),
                                               Text(

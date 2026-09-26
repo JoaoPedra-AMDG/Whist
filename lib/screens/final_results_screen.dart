@@ -40,7 +40,7 @@ class _FinalResultsScreenState extends State<FinalResultsScreen> {
                   Icon(
                     Icons.emoji_events_outlined,
                     size: 36,
-                    color: Theme.of(context).colorScheme.primary,
+                    color: Theme.of(context).colorScheme.tertiary,
                   ),
                   const SizedBox(height: 4),
                   Text(
