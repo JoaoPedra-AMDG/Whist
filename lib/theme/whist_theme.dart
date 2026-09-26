@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 
-/// Dark charcoal and lavender palette inspired by Antimine's menu theme.
+/// Bright card-table accents on a deep navy background.
 abstract final class WhistPalette {
-  static const background = Color(0xFF29282C);
-  static const surface = Color(0xFF44414B);
-  static const surfaceRaised = Color(0xFF504B59);
-  static const accent = Color(0xFFD2B9FF);
-  static const accentMuted = Color(0xFFAB95D0);
-  static const text = Color(0xFFF5F0F8);
-  static const textMuted = Color(0xFFCDC5D3);
-  static const outline = Color(0xFF82758D);
-  static const danger = Color(0xFFFFB4AB);
+  static const background = Color(0xFF111827);
+  static const surface = Color(0xFF202C40);
+  static const surfaceRaised = Color(0xFF2B3A52);
+  static const accent = Color(0xFFB78BFF);
+  static const accentMuted = Color(0xFF54E8D3);
+  static const text = Color(0xFFF8FAFF);
+  static const textMuted = Color(0xFFD1DBE9);
+  static const outline = Color(0xFF63748E);
+  static const danger = Color(0xFFFF6675);
 }
 
 ThemeData buildWhistTheme() {
@@ -24,12 +24,16 @@ ThemeData buildWhistTheme() {
     onPrimaryContainer: WhistPalette.text,
     secondary: WhistPalette.accentMuted,
     onSecondary: WhistPalette.background,
+    tertiary: const Color(0xFFFFD166),
+    onTertiary: WhistPalette.background,
     surface: WhistPalette.background,
     onSurface: WhistPalette.text,
     onSurfaceVariant: WhistPalette.textMuted,
     outline: WhistPalette.outline,
     error: WhistPalette.danger,
     onError: WhistPalette.background,
+    errorContainer: const Color(0xFF6D2539),
+    onErrorContainer: WhistPalette.text,
   );
   const radius = BorderRadius.all(Radius.circular(12));
   return ThemeData(

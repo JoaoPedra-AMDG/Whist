@@ -6,8 +6,43 @@ import 'package:whist/logic/game_controller.dart';
 import 'package:whist/logic/game_rules.dart';
 import 'package:whist/models/game.dart';
 import 'package:whist/services/game_storage.dart';
+import 'package:whist/theme/whist_theme.dart';
 
 void main() {
+  testWidgets('setup shows all name fields and scrolls to added players', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    await tester.pumpWidget(
+      WhistApp(
+        gameController: GameController(
+          storage: GameStorage(reader: () async => null, writer: (_) async {}),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('New game'));
+    await tester.pumpAndSettle();
+    expect(find.byType(TextField), findsNWidgets(3));
+
+    for (var count = 4; count <= 7; count++) {
+      await tester.tap(find.text('Add player'));
+      await tester.pumpAndSettle();
+      final newField = find.byKey(ValueKey('player-name-$count'));
+      expect(newField, findsOneWidget);
+      expect(tester.getTopLeft(newField).dy, greaterThanOrEqualTo(0));
+      expect(tester.getBottomRight(newField).dy, lessThanOrEqualTo(640));
+    }
+    expect(find.byType(TextField), findsNWidgets(7));
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('failed saves explain the problem and never advance the round', (
     tester,
   ) async {
@@ -46,13 +81,15 @@ void main() {
     await tester.tap(find.text('New game'));
     await settle();
 
-    await tester.enterText(find.byType(TextField), 'John');
-    await tester.tap(find.byTooltip('Next player'));
-    await settle();
-    await tester.enterText(find.byType(TextField), 'Sarah');
-    await tester.tap(find.byTooltip('Next player'));
-    await settle();
-    await tester.enterText(find.byType(TextField), 'Michael');
+    await tester.enterText(find.byKey(const ValueKey('player-name-1')), 'John');
+    await tester.enterText(
+      find.byKey(const ValueKey('player-name-2')),
+      'Sarah',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('player-name-3')),
+      'Michael',
+    );
     await tester.tap(find.text('Start game'));
     await settle();
 
@@ -63,6 +100,17 @@ void main() {
     await settle();
     await tester.tap(find.widgetWithText(OutlinedButton, '0').first);
     await settle();
+    final forbiddenButton = find.widgetWithText(OutlinedButton, '10');
+    expect(tester.widget<OutlinedButton>(forbiddenButton).onPressed, isNull);
+    expect(
+      tester
+          .widget<Text>(
+            find.descendant(of: forbiddenButton, matching: find.text('10')),
+          )
+          .style
+          ?.color,
+      WhistPalette.danger,
+    );
     failNextSave = true;
     await tester.tap(find.widgetWithText(OutlinedButton, '0').first);
     await settle();

@@ -16,7 +16,7 @@ class _GameSetupScreenState extends State<GameSetupScreen> {
     TextEditingController(),
     TextEditingController(),
   ];
-  int _selected = 0;
+  final List<GlobalKey> _rowKeys = [GlobalKey(), GlobalKey(), GlobalKey()];
   int _cards = 10;
   bool _saving = false;
   String? _error;
@@ -29,9 +29,18 @@ class _GameSetupScreenState extends State<GameSetupScreen> {
     super.dispose();
   }
 
-  void _select(int index) {
-    FocusScope.of(context).unfocus();
-    setState(() => _selected = index);
+  void _showRow(int index) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || index >= _rowKeys.length) return;
+      final row = _rowKeys[index].currentContext;
+      if (row != null) {
+        Scrollable.ensureVisible(
+          row,
+          duration: const Duration(milliseconds: 250),
+          alignment: 0.25,
+        );
+      }
+    });
   }
 
   void _add() {
@@ -39,42 +48,46 @@ class _GameSetupScreenState extends State<GameSetupScreen> {
     FocusScope.of(context).unfocus();
     setState(() {
       _names.add(TextEditingController());
-      _selected = _names.length - 1;
+      _rowKeys.add(GlobalKey());
       _cards = _cards.clamp(1, maxStartingCards(_names.length));
+      _error = null;
     });
+    _showRow(_names.length - 1);
   }
 
-  void _remove() {
+  void _remove(int index) {
     if (_names.length <= 2) return;
     FocusScope.of(context).unfocus();
     late final TextEditingController removed;
     setState(() {
-      removed = _names.removeAt(_selected);
-      _selected = _selected.clamp(0, _names.length - 1);
+      removed = _names.removeAt(index);
+      _rowKeys.removeAt(index);
       _cards = _cards.clamp(1, maxStartingCards(_names.length));
+      _error = null;
     });
     WidgetsBinding.instance.addPostFrameCallback((_) => removed.dispose());
   }
 
-  void _move(int direction) {
-    final target = _selected + direction;
+  void _move(int index, int direction) {
+    final target = index + direction;
     if (target < 0 || target >= _names.length) return;
     FocusScope.of(context).unfocus();
     setState(() {
-      final current = _names.removeAt(_selected);
-      _names.insert(target, current);
-      _selected = target;
+      final name = _names.removeAt(index);
+      final key = _rowKeys.removeAt(index);
+      _names.insert(target, name);
+      _rowKeys.insert(target, key);
     });
+    _showRow(target);
   }
 
   Future<void> _start() async {
     FocusScope.of(context).unfocus();
     final players = _names.map((name) => name.text.trim()).toList();
-    if (players.any((name) => name.isEmpty)) {
-      setState(() {
-        _error =
-            'Give every player a name. Use the arrows to find empty names.';
-      });
+    final empty = players.indexWhere((name) => name.isEmpty);
+    if (empty != -1) {
+      setState(() => _error = 'Give player ${empty + 1} a name.');
+      _showRow(empty);
       return;
     }
     if (players.map((name) => name.toLowerCase()).toSet().length !=
@@ -105,144 +118,118 @@ class _GameSetupScreenState extends State<GameSetupScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('New game')),
       body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 560),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    'Players',
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                  const SizedBox(height: 4),
-                  const Text('Enter names in calling order.'),
-                  const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      IconButton(
-                        tooltip: 'Previous player',
-                        onPressed:
-                            _selected > 0 ? () => _select(_selected - 1) : null,
-                        icon: const Icon(Icons.chevron_left),
-                      ),
-                      Text(
-                        'Player ${_selected + 1} of ${_names.length}',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      IconButton(
-                        tooltip: 'Next player',
-                        onPressed:
-                            _selected < _names.length - 1
-                                ? () => _select(_selected + 1)
-                                : null,
-                        icon: const Icon(Icons.chevron_right),
-                      ),
-                    ],
-                  ),
-                  TextField(
-                    key: ValueKey(_names[_selected]),
-                    controller: _names[_selected],
-                    textCapitalization: TextCapitalization.words,
-                    textInputAction: TextInputAction.done,
-                    onSubmitted: (_) => FocusScope.of(context).unfocus(),
-                    decoration: InputDecoration(
-                      labelText: 'Player ${_selected + 1} name',
-                      border: const OutlineInputBorder(),
+        child: SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 560),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'Players',
+                      style: Theme.of(context).textTheme.headlineSmall,
                     ),
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      TextButton.icon(
-                        onPressed: _names.length < 52 ? _add : null,
-                        icon: const Icon(Icons.add),
-                        label: const Text('Add'),
-                      ),
-                      IconButton(
-                        tooltip: 'Move earlier',
-                        onPressed: _selected > 0 ? () => _move(-1) : null,
-                        icon: const Icon(Icons.arrow_upward),
-                      ),
-                      IconButton(
-                        tooltip: 'Move later',
-                        onPressed:
-                            _selected < _names.length - 1
-                                ? () => _move(1)
-                                : null,
-                        icon: const Icon(Icons.arrow_downward),
-                      ),
-                      IconButton(
-                        tooltip: 'Remove player',
-                        onPressed: _names.length > 2 ? _remove : null,
-                        icon: const Icon(Icons.remove_circle_outline),
-                      ),
-                    ],
-                  ),
-                  const Divider(height: 28),
-                  Text(
-                    'Starting cards',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  Text('$_cards per player · maximum $max'),
-                  Slider(
-                    value: _cards.toDouble(),
-                    min: 1,
-                    max: max.toDouble(),
-                    divisions: max > 1 ? max - 1 : null,
-                    label: '$_cards',
-                    onChanged:
-                        (value) => setState(() => _cards = value.round()),
-                  ),
-                  const Spacer(),
-                  if (_error != null)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              _error!,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.error,
+                    const SizedBox(height: 4),
+                    const Text('Enter names in calling order.'),
+                    const SizedBox(height: 16),
+                    for (var index = 0; index < _names.length; index++)
+                      Padding(
+                        key: _rowKeys[index],
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                key: ValueKey('player-name-${index + 1}'),
+                                controller: _names[index],
+                                textCapitalization: TextCapitalization.words,
+                                textInputAction:
+                                    index == _names.length - 1
+                                        ? TextInputAction.done
+                                        : TextInputAction.next,
+                                onSubmitted: (_) {
+                                  if (index == _names.length - 1) {
+                                    FocusScope.of(context).unfocus();
+                                  } else {
+                                    FocusScope.of(context).nextFocus();
+                                  }
+                                },
+                                decoration: InputDecoration(
+                                  labelText: 'Player ${index + 1} name',
+                                ),
                               ),
                             ),
-                          ),
-                          TextButton(
-                            onPressed:
-                                () => showDialog<void>(
-                                  context: context,
-                                  builder:
-                                      (context) => AlertDialog(
-                                        title: const Text('Save details'),
-                                        content: Text(_error!),
-                                        actions: [
-                                          TextButton(
-                                            onPressed:
-                                                () => Navigator.pop(context),
-                                            child: const Text('Close'),
-                                          ),
-                                        ],
-                                      ),
-                                ),
-                            child: const Text('Details'),
-                          ),
-                        ],
+                            IconButton(
+                              tooltip: 'Move player ${index + 1} earlier',
+                              onPressed:
+                                  index > 0 ? () => _move(index, -1) : null,
+                              icon: const Icon(Icons.arrow_upward),
+                            ),
+                            IconButton(
+                              tooltip: 'Move player ${index + 1} later',
+                              onPressed:
+                                  index < _names.length - 1
+                                      ? () => _move(index, 1)
+                                      : null,
+                              icon: const Icon(Icons.arrow_downward),
+                            ),
+                            IconButton(
+                              tooltip: 'Remove player ${index + 1}',
+                              onPressed:
+                                  _names.length > 2
+                                      ? () => _remove(index)
+                                      : null,
+                              icon: const Icon(Icons.remove_circle_outline),
+                            ),
+                          ],
+                        ),
+                      ),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton.icon(
+                        onPressed: _names.length < 52 ? _add : null,
+                        icon: const Icon(Icons.add),
+                        label: const Text('Add player'),
                       ),
                     ),
-                  FilledButton(
-                    onPressed: _saving ? null : _start,
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Text(_saving ? 'Saving…' : 'Start game'),
+                    const Divider(height: 28),
+                    Text(
+                      'Starting cards',
+                      style: Theme.of(context).textTheme.titleLarge,
                     ),
-                  ),
-                ],
+                    Text('$_cards per player · maximum $max'),
+                    Slider(
+                      value: _cards.toDouble(),
+                      min: 1,
+                      max: max.toDouble(),
+                      divisions: max > 1 ? max - 1 : null,
+                      label: '$_cards',
+                      onChanged:
+                          (value) => setState(() => _cards = value.round()),
+                    ),
+                    const SizedBox(height: 12),
+                    if (_error != null)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Text(
+                          _error!,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                        ),
+                      ),
+                    FilledButton(
+                      onPressed: _saving ? null : _start,
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Text(_saving ? 'Saving…' : 'Start game'),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

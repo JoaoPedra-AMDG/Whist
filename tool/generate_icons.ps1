@@ -8,7 +8,7 @@ Add-Type -AssemblyName System.Drawing
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $sourcePath = Join-Path $root $Source
 $artwork = [System.Drawing.Image]::FromFile($sourcePath)
-$background = [System.Drawing.ColorTranslator]::FromHtml('#29282C')
+$background = [System.Drawing.ColorTranslator]::FromHtml('#111827')
 
 function New-IconPng {
     param([int]$Size, [double]$ArtworkHeight, [string]$Destination)

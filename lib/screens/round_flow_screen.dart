@@ -326,7 +326,7 @@ class _RoundFlowScreenState extends State<RoundFlowScreen> {
         if (forbidden != null)
           Text(
             '$forbidden is unavailable for the last caller.',
-            style: TextStyle(color: Theme.of(context).colorScheme.primary),
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
           ),
         const SizedBox(height: 10),
         Expanded(
@@ -352,6 +352,7 @@ class _RoundFlowScreenState extends State<RoundFlowScreen> {
                         ),
                         itemCount: _cards + 1,
                         itemBuilder: (context, value) {
+                          final unavailable = isCalls && value == forbidden;
                           final selected =
                               (isCalls ? _calls[_person] : _wins[_person]) ==
                               value;
@@ -362,19 +363,27 @@ class _RoundFlowScreenState extends State<RoundFlowScreen> {
                                   selected
                                       ? WhistPalette.accent
                                       : WhistPalette.surface,
+                              disabledBackgroundColor:
+                                  unavailable
+                                      ? const Color(0xFF5B263A)
+                                      : WhistPalette.surface,
                               foregroundColor:
-                                  selected
+                                  unavailable
+                                      ? WhistPalette.danger
+                                      : selected
                                       ? WhistPalette.background
                                       : WhistPalette.text,
                               side: BorderSide(
                                 color:
-                                    selected
+                                    unavailable
+                                        ? WhistPalette.danger
+                                        : selected
                                         ? WhistPalette.accent
                                         : WhistPalette.outline,
                               ),
                             ),
                             onPressed:
-                                _busy || (isCalls && value == forbidden)
+                                _busy || unavailable
                                     ? null
                                     : () =>
                                         isCalls
@@ -386,7 +395,9 @@ class _RoundFlowScreenState extends State<RoundFlowScreen> {
                                 fontSize: 20,
                                 fontWeight: FontWeight.w700,
                                 color:
-                                    selected
+                                    unavailable
+                                        ? WhistPalette.danger
+                                        : selected
                                         ? WhistPalette.background
                                         : WhistPalette.text,
                               ),
@@ -401,7 +412,14 @@ class _RoundFlowScreenState extends State<RoundFlowScreen> {
                     children: [
                       Text(
                         '$_pickerValue',
-                        style: Theme.of(context).textTheme.displayLarge,
+                        style: Theme.of(
+                          context,
+                        ).textTheme.displayLarge?.copyWith(
+                          color:
+                              isCalls && _pickerValue == forbidden
+                                  ? WhistPalette.danger
+                                  : null,
+                        ),
                       ),
                       Slider(
                         value: _pickerValue.toDouble(),
