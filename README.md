@@ -42,4 +42,4 @@ The game history is the source of truth. Totals are recalculated from completed 
 
 ## Rules assumption
 
-Calls are entered in the fixed player order chosen during setup. The first caller does not rotate between rounds because no rotation rule was specified. Trump selection and card play are handled by players with the physical deck; the app tracks only final trick counts.
+Seats are entered in the direction the dealer moves: the next listed player sits to the previous player’s left. The dealer moves one seat left each round. Calls and results start with the player to the dealer’s left and end with the dealer. Seating and the current dealer can be corrected during a game without moving past scores between players. Trump selection and card play are handled by players with the physical deck; the app tracks only final trick counts.

@@ -17,9 +17,16 @@ class _GameSetupScreenState extends State<GameSetupScreen> {
     TextEditingController(),
   ];
   final List<GlobalKey> _rowKeys = [GlobalKey(), GlobalKey(), GlobalKey()];
+  late TextEditingController _firstDealer;
   int _cards = 10;
   bool _saving = false;
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _firstDealer = _names.last;
+  }
 
   @override
   void dispose() {
@@ -62,6 +69,7 @@ class _GameSetupScreenState extends State<GameSetupScreen> {
     setState(() {
       removed = _names.removeAt(index);
       _rowKeys.removeAt(index);
+      if (removed == _firstDealer) _firstDealer = _names.last;
       _cards = _cards.clamp(1, maxStartingCards(_names.length));
       _error = null;
     });
@@ -100,7 +108,11 @@ class _GameSetupScreenState extends State<GameSetupScreen> {
       _error = null;
     });
     try {
-      await widget.controller.start(players, _cards);
+      await widget.controller.start(
+        players,
+        _cards,
+        firstDealer: _names.indexOf(_firstDealer),
+      );
       if (mounted) Navigator.pop(context, true);
     } catch (error) {
       if (mounted) {
@@ -133,7 +145,9 @@ class _GameSetupScreenState extends State<GameSetupScreen> {
                       style: Theme.of(context).textTheme.headlineSmall,
                     ),
                     const SizedBox(height: 4),
-                    const Text('Enter names in calling order.'),
+                    const Text(
+                      'Enter seats in order to the left. Use the arrows to change their order.',
+                    ),
                     const SizedBox(height: 16),
                     for (var index = 0; index < _names.length; index++)
                       Padding(
@@ -145,6 +159,7 @@ class _GameSetupScreenState extends State<GameSetupScreen> {
                               child: TextField(
                                 key: ValueKey('player-name-${index + 1}'),
                                 controller: _names[index],
+                                onChanged: (_) => setState(() {}),
                                 textCapitalization: TextCapitalization.words,
                                 textInputAction:
                                     index == _names.length - 1
@@ -194,6 +209,31 @@ class _GameSetupScreenState extends State<GameSetupScreen> {
                         icon: const Icon(Icons.add),
                         label: const Text('Add player'),
                       ),
+                    ),
+                    const SizedBox(height: 8),
+                    DropdownButtonFormField<TextEditingController>(
+                      key: ValueKey(_firstDealer),
+                      value: _firstDealer,
+                      decoration: const InputDecoration(
+                        labelText: 'First dealer',
+                      ),
+                      items: [
+                        for (var index = 0; index < _names.length; index++)
+                          DropdownMenuItem(
+                            value: _names[index],
+                            child: Text(
+                              _names[index].text.trim().isEmpty
+                                  ? 'Player ${index + 1}'
+                                  : _names[index].text.trim(),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                      ],
+                      onChanged: (dealer) {
+                        if (dealer != null) {
+                          setState(() => _firstDealer = dealer);
+                        }
+                      },
                     ),
                     const Divider(height: 28),
                     Text(

@@ -37,6 +37,8 @@ class _RoundFlowScreenState extends State<RoundFlowScreen> {
 
   int get _count => widget.controller.game!.players.length;
   int get _cards => widget.controller.game!.rounds[widget.roundIndex].cards;
+  List<int> get _order =>
+      widget.controller.game!.turnOrderForRound(widget.roundIndex);
 
   @override
   void initState() {
@@ -45,6 +47,7 @@ class _RoundFlowScreenState extends State<RoundFlowScreen> {
     _calls = Map.of(round.calls);
     _wins = Map.of(round.wins);
     _stage = widget.initialStage;
+    _person = _order.first;
     if (_stage == RoundStage.calls && !widget.editing) {
       _person = _firstMissing(_calls);
     } else if (_stage == RoundStage.results) {
@@ -55,7 +58,7 @@ class _RoundFlowScreenState extends State<RoundFlowScreen> {
   }
 
   int _firstMissing(Map<int, int> values) {
-    for (var index = 0; index < _count; index++) {
+    for (final index in _order) {
       if (!values.containsKey(index)) return index;
     }
     return 0;
@@ -100,7 +103,7 @@ class _RoundFlowScreenState extends State<RoundFlowScreen> {
 
   Future<void> _chooseCall(int value) async {
     if (_busy) return;
-    final last = _count - 1;
+    final last = _order.last;
     setState(() {
       _busy = true;
       _error = null;
@@ -108,12 +111,12 @@ class _RoundFlowScreenState extends State<RoundFlowScreen> {
       _calls[_person] = value;
       if (_person != last &&
           _calls.length == _count &&
-          !validCalls(_cards, [for (var i = 0; i < _count; i++) _calls[i]!])) {
+          !validCalls(_cards, [for (final person in _order) _calls[person]!])) {
         _calls.remove(last);
       }
       if (_calls.length == _count) {
         _stage = RoundStage.callsReady;
-        _person = 0;
+        _person = _order.first;
       } else {
         _person = _firstMissing(_calls);
       }
@@ -132,10 +135,10 @@ class _RoundFlowScreenState extends State<RoundFlowScreen> {
       _wins[_person] = value;
       if (_wins.length == _count) {
         if (validResults(_cards, [
-          for (var i = 0; i < _count; i++) _wins[i]!,
+          for (final person in _order) _wins[person]!,
         ])) {
           _stage = RoundStage.summary;
-          _person = 0;
+          _person = _order.first;
         } else {
           final entered = _wins.values.fold<int>(0, (sum, won) => sum + won);
           _error =
@@ -160,8 +163,8 @@ class _RoundFlowScreenState extends State<RoundFlowScreen> {
     if (_saveFailed) return;
     if (_calls.length != _count ||
         _wins.length != _count ||
-        !validCalls(_cards, [for (var i = 0; i < _count; i++) _calls[i]!]) ||
-        !validResults(_cards, [for (var i = 0; i < _count; i++) _wins[i]!])) {
+        !validCalls(_cards, [for (final person in _order) _calls[person]!]) ||
+        !validResults(_cards, [for (final person in _order) _wins[person]!])) {
       setState(
         () => _error = 'Check every call and trick total before confirming.',
       );
@@ -204,12 +207,12 @@ class _RoundFlowScreenState extends State<RoundFlowScreen> {
     final isCalls = _stage == RoundStage.calls;
     final forbidden =
         isCalls &&
-                _person == _count - 1 &&
+                _person == _order.last &&
                 [
-                  for (var i = 0; i < _count - 1; i++) _calls[i],
+                  for (final person in _order.take(_count - 1)) _calls[person],
                 ].every((call) => call != null)
             ? forbiddenFinalCall(_cards, [
-              for (var i = 0; i < _count - 1; i++) _calls[i]!,
+              for (final person in _order.take(_count - 1)) _calls[person]!,
             ])
             : null;
 
@@ -250,6 +253,11 @@ class _RoundFlowScreenState extends State<RoundFlowScreen> {
                           RoundStage.results => 'RESULTS',
                           RoundStage.summary => 'ROUND SUMMARY',
                         }, style: Theme.of(context).textTheme.labelLarge),
+                        Text(
+                          'Dealer: ${game.players[game.dealerForRound(widget.roundIndex)]}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                         const SizedBox(height: 12),
                         Expanded(
                           child:
@@ -487,6 +495,7 @@ class _RoundFlowScreenState extends State<RoundFlowScreen> {
   Widget _actions(BuildContext context, WhistGame game) {
     final isEntry = _stage == RoundStage.calls || _stage == RoundStage.results;
     final values = _stage == RoundStage.results ? _wins : _calls;
+    final position = _order.indexOf(_person);
     return Column(
       children: [
         Row(
@@ -495,23 +504,23 @@ class _RoundFlowScreenState extends State<RoundFlowScreen> {
             IconButton(
               tooltip: 'Previous player',
               onPressed:
-                  _busy || _person == 0
+                  _busy || position == 0
                       ? null
-                      : () => _selectPerson(_person - 1),
+                      : () => _selectPerson(_order[position - 1]),
               icon: const Icon(Icons.chevron_left),
             ),
             Text(
-              '${_person + 1} / $_count',
+              '${position + 1} / $_count',
               style: Theme.of(context).textTheme.titleMedium,
             ),
             IconButton(
               tooltip: 'Next player',
               onPressed:
                   _busy ||
-                          _person == _count - 1 ||
+                          position == _count - 1 ||
                           (isEntry && values[_person] == null)
                       ? null
-                      : () => _selectPerson(_person + 1),
+                      : () => _selectPerson(_order[position + 1]),
               icon: const Icon(Icons.chevron_right),
             ),
           ],
@@ -535,21 +544,21 @@ class _RoundFlowScreenState extends State<RoundFlowScreen> {
                     ? null
                     : () => setState(() {
                       _stage = RoundStage.calls;
-                      _person = 0;
+                      _person = _order.first;
                     }),
             child: const Text('Calls'),
           ),
         ],
         if (_stage == RoundStage.results &&
             _wins.length == _count &&
-            validResults(_cards, [for (var i = 0; i < _count; i++) _wins[i]!]))
+            validResults(_cards, [for (final person in _order) _wins[person]!]))
           FilledButton(
             onPressed:
                 _busy || _saveFailed
                     ? null
                     : () => setState(() {
                       _stage = RoundStage.summary;
-                      _person = 0;
+                      _person = _order.first;
                     }),
             child: const Text('Review round'),
           ),
@@ -567,7 +576,7 @@ class _RoundFlowScreenState extends State<RoundFlowScreen> {
                         ? null
                         : () => setState(() {
                           _stage = RoundStage.calls;
-                          _person = 0;
+                          _person = _order.first;
                         }),
                 child: const Text('Calls'),
               ),
@@ -577,7 +586,7 @@ class _RoundFlowScreenState extends State<RoundFlowScreen> {
                         ? null
                         : () => setState(() {
                           _stage = RoundStage.results;
-                          _person = 0;
+                          _person = _order.first;
                         }),
                 child: const Text('Results'),
               ),

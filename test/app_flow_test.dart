@@ -6,9 +6,137 @@ import 'package:whist/logic/game_controller.dart';
 import 'package:whist/logic/game_rules.dart';
 import 'package:whist/models/game.dart';
 import 'package:whist/services/game_storage.dart';
+import 'package:whist/screens/game_screen.dart';
+import 'package:whist/screens/game_setup_screen.dart';
+import 'package:whist/screens/seating_screen.dart';
 import 'package:whist/theme/whist_theme.dart';
 
 void main() {
+  testWidgets(
+    'round entry follows dealer order and keeps actions below scroll',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 640);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+      final controller = GameController(
+        storage: GameStorage(reader: () async => null, writer: (_) async {}),
+      );
+      await controller.start(
+        ['John', 'Sarah', 'Michael', 'Anne', 'Peter', 'Lucy'],
+        1,
+        firstDealer: 0,
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildWhistTheme(),
+          home: GameScreen(controller: controller),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Enter predictions'), findsOneWidget);
+      await tester.drag(find.byType(ListView).first, const Offset(0, -350));
+      await tester.pumpAndSettle();
+      expect(find.text('Enter predictions'), findsOneWidget);
+      expect(
+        tester.getBottomRight(find.text('Enter predictions')).dy,
+        lessThan(640),
+      );
+      await tester.tap(find.text('Enter predictions'));
+      await tester.pumpAndSettle();
+      expect(find.text('Sarah'), findsOneWidget);
+      await tester.tap(find.widgetWithText(OutlinedButton, '0').first);
+      await tester.pumpAndSettle();
+      expect(find.text('Michael'), findsOneWidget);
+      for (var turn = 0; turn < 5; turn++) {
+        await tester.tap(find.widgetWithText(OutlinedButton, '0').first);
+        await tester.pumpAndSettle();
+      }
+      await tester.tap(find.text('Play round'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Enter results'));
+      await tester.pumpAndSettle();
+      expect(find.text('Sarah'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets('setup lets players choose the first dealer', (tester) async {
+    tester.view.physicalSize = const Size(390, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    final controller = GameController(
+      storage: GameStorage(reader: () async => null, writer: (_) async {}),
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildWhistTheme(),
+        home: GameSetupScreen(controller: controller),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const ValueKey('player-name-1')), 'John');
+    await tester.enterText(
+      find.byKey(const ValueKey('player-name-2')),
+      'Sarah',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('player-name-3')),
+      'Michael',
+    );
+    final dealerPicker = find.byType(
+      DropdownButtonFormField<TextEditingController>,
+    );
+    await tester.ensureVisible(dealerPicker);
+    await tester.tap(dealerPicker);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Sarah').last);
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Start game'));
+    await tester.tap(find.text('Start game'));
+    await tester.pumpAndSettle();
+    expect(controller.game!.dealerForRound(0), 1);
+    expect(controller.game!.turnOrderForRound(0), [2, 0, 1]);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('seating controls change the current dealer and seat order', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    final controller = GameController(
+      storage: GameStorage(reader: () async => null, writer: (_) async {}),
+    );
+    await controller.start(['John', 'Sarah', 'Michael'], 1);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildWhistTheme(),
+        home: SeatingScreen(controller: controller),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Move Sarah later'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Set John as dealer'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save seating'));
+    await tester.pumpAndSettle();
+    expect(controller.game!.seatOrder, [0, 2, 1]);
+    expect(controller.game!.dealerForRound(0), 0);
+    expect(controller.game!.turnOrderForRound(0), [2, 1, 0]);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('setup shows all name fields and scrolls to added players', (
     tester,
   ) async {
@@ -90,6 +218,8 @@ void main() {
       find.byKey(const ValueKey('player-name-3')),
       'Michael',
     );
+    await tester.ensureVisible(find.text('Start game'));
+    await settle();
     await tester.tap(find.text('Start game'));
     await settle();
 

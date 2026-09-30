@@ -29,8 +29,12 @@ class ScoreSheetScreen extends StatelessWidget {
                   headingRowHeight: 66,
                   columns: [
                     const DataColumn(label: Text('Round / cards')),
-                    for (final name in game.players)
-                      DataColumn(label: Text('$name\nCall · Won · Total')),
+                    for (final player in game.seatOrder)
+                      DataColumn(
+                        label: Text(
+                          '${game.players[player]}\nCall · Won · Total',
+                        ),
+                      ),
                   ],
                   rows: [
                     for (var index = 0; index < game.rounds.length; index++)
@@ -62,11 +66,7 @@ class ScoreSheetScreen extends StatelessWidget {
                               '${index + 1} · ${game.rounds[index].label}${game.rounds[index].completed ? '' : ' · —'}',
                             ),
                           ),
-                          for (
-                            var player = 0;
-                            player < game.players.length;
-                            player++
-                          )
+                          for (final player in game.seatOrder)
                             DataCell(
                               Text(
                                 game.rounds[index].completed

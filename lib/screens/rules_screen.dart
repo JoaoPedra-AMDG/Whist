@@ -20,7 +20,7 @@ class _RulesScreenState extends State<RulesScreen> {
     ),
     (
       'Before each round',
-      'In order, each player calls how many tricks they expect to win. The final caller may not make the total calls equal the number of tricks available.',
+      'The dealer moves one seat left each round. Calls start with the player to the dealer’s left and end with the dealer. The dealer may not make the total calls equal the number of tricks available.',
     ),
     (
       'Playing a trick',
@@ -32,7 +32,7 @@ class _RulesScreenState extends State<RulesScreen> {
     ),
     (
       'Corrections',
-      'Open the score sheet and tap a completed round to correct its calls or results. Totals update automatically.',
+      'Use Seating and dealer to correct the current dealer or seat order. Open the score sheet and tap a completed round to correct its calls or results. Totals update automatically.',
     ),
   ];
 

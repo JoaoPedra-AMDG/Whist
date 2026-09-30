@@ -1,7 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:whist/logic/game_rules.dart';
+import 'package:whist/logic/game_controller.dart';
 import 'package:whist/logic/scoring.dart';
+import 'package:whist/logic/seating.dart';
 import 'package:whist/models/game.dart';
+import 'package:whist/services/game_storage.dart';
 
 void main() {
   test('ten-card sequence has 21 rounds and one blind round', () {
@@ -37,6 +40,86 @@ void main() {
   test('starting cards respect a 52-card deck', () {
     expect(maxStartingCards(3), 17);
     expect(maxStartingCards(6), 8);
+  });
+
+  test('calls begin left of the dealer and end with the dealer', () {
+    const seats = [0, 1, 2, 3];
+    expect(callingOrder(seats, 1), [2, 3, 0, 1]);
+    expect(nextDealer(seats, 1), 2);
+    expect(callingOrder(seats, 2), [3, 0, 1, 2]);
+  });
+
+  test('changing seats keeps past scores and rotates future dealers', () async {
+    String? saved;
+    final controller = GameController(
+      storage: GameStorage(
+        reader: () async => saved,
+        writer: (value) async {
+          saved = value;
+        },
+      ),
+    );
+    await controller.start(['A', 'B', 'C'], 2, firstDealer: 1);
+    expect(controller.game!.dealerForRound(0), 1);
+    expect(controller.game!.turnOrderForRound(0), [2, 0, 1]);
+    expect(controller.game!.dealerForRound(1), 2);
+    await controller.commit(0, {0: 0, 1: 0, 2: 1}, {0: 1, 1: 1, 2: 0});
+    final score = totalScore(controller.game!, 0);
+    await controller.updateSeating([0, 2, 1], 0);
+    expect(controller.game!.seatOrder, [0, 2, 1]);
+    expect(controller.game!.turnOrderForRound(0), [2, 0, 1]);
+    expect(controller.game!.dealerForRound(0), 1);
+    expect(controller.game!.turnOrderForRound(1), [2, 1, 0]);
+    expect(controller.game!.dealerForRound(2), 2);
+    expect(totalScore(controller.game!, 0), score);
+    expect(saved, isNotNull);
+  });
+
+  test('a failed seating save leaves the previous dealer in place', () async {
+    var failSave = false;
+    final controller = GameController(
+      storage: GameStorage(
+        reader: () async => null,
+        writer: (_) async {
+          if (failSave) throw StateError('Storage unavailable');
+        },
+      ),
+    );
+    await controller.start(['A', 'B', 'C'], 1);
+    failSave = true;
+    await expectLater(
+      controller.updateSeating([0, 2, 1], 0),
+      throwsA(isA<GameStorageException>()),
+    );
+    expect(controller.game!.seatOrder, [0, 1, 2]);
+    expect(controller.game!.dealerForRound(0), 2);
+  });
+
+  test('older saved games retain entered call order and scores', () {
+    final old = WhistGame(
+      players: ['A', 'B', 'C'],
+      startingCards: 1,
+      rounds: generateRounds(1),
+    );
+    old.rounds[0]
+      ..calls.addAll({0: 0, 1: 0, 2: 0})
+      ..wins.addAll({0: 1, 1: 0, 2: 0})
+      ..completed = true;
+    old.rounds[1].calls[0] = 0;
+    final json = old.toJson();
+    json['version'] = 1;
+    json.remove('seatOrder');
+    for (final round in json['rounds']! as List<dynamic>) {
+      (round as Map<String, Object?>)
+        ..remove('dealer')
+        ..remove('turnOrder');
+    }
+    final loaded = WhistGame.fromJson(json);
+    expect(loaded.turnOrderForRound(0), [0, 1, 2]);
+    expect(loaded.turnOrderForRound(1), [0, 1, 2]);
+    expect(loaded.dealerForRound(2), 0);
+    expect(loaded.turnOrderForRound(2), [1, 2, 0]);
+    expect(totalScore(loaded, 0), 1);
   });
 
   test('scoring includes exact and zero-call bonuses', () {
