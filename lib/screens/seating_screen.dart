@@ -74,7 +74,7 @@ class _SeatingScreenState extends State<SeatingScreen> {
                   ),
                   const SizedBox(height: 4),
                   const Text(
-                    'Seats run to the left. Move players with the arrows, then tap the cards beside the dealer.',
+                    'Seats run to the left. Move players with the arrows. Tap the cards beside a player to make them the dealer.',
                   ),
                   const SizedBox(height: 8),
                   Text(
