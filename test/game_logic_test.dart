@@ -95,6 +95,75 @@ void main() {
     expect(controller.game!.dealerForRound(0), 2);
   });
 
+  test(
+    'early finish excludes drafts and keeps past games after a new game',
+    () async {
+      String? saved;
+      final storage = GameStorage(
+        reader: () async => saved,
+        writer: (value) async => saved = value,
+      );
+      final controller = GameController(storage: storage);
+      await controller.start(['Alice', 'Bob'], 1);
+      await controller.commit(0, {0: 0, 1: 0}, {0: 1, 1: 0});
+      await controller.saveDraft(1, {0: 1, 1: 0}, {0: 1});
+      await controller.finishEarly();
+
+      expect(controller.game!.isFinished, isTrue);
+      expect(controller.game!.roundsPlayed, 1);
+      expect(controller.game!.history, hasLength(1));
+      expect(controller.game!.history.single.scores, [1, 10]);
+      expect(controller.game!.history.single.endedEarly, isTrue);
+
+      await controller.start(['Bob', 'Alice'], 1);
+      expect(controller.game!.history, hasLength(1));
+      final reloaded = GameController(storage: storage);
+      await reloaded.load();
+      expect(reloaded.game!.history.single.players, ['Alice', 'Bob']);
+      expect(reloaded.game!.history.single.scores, [1, 10]);
+    },
+  );
+
+  test(
+    'completed games archive once and a correction updates final scores',
+    () async {
+      final controller = GameController(
+        storage: GameStorage(reader: () async => null, writer: (_) async {}),
+      );
+      await controller.start(['Alice', 'Bob'], 1);
+      for (var index = 0; index < controller.game!.rounds.length; index++) {
+        await controller.commit(index, {0: 0, 1: 0}, {0: 1, 1: 0});
+      }
+      expect(controller.game!.history, hasLength(1));
+      final finishedAt = controller.game!.history.single.finishedAt;
+      await controller.commit(0, {0: 1, 1: 0}, {0: 1, 1: 0});
+      expect(controller.game!.history, hasLength(1));
+      expect(controller.game!.history.single.finishedAt, finishedAt);
+      expect(controller.game!.history.single.scores, [13, 30]);
+    },
+  );
+
+  test('failed early-finish save leaves the game active', () async {
+    var failSave = false;
+    final controller = GameController(
+      storage: GameStorage(
+        reader: () async => null,
+        writer: (_) async {
+          if (failSave) throw StateError('Storage unavailable');
+        },
+      ),
+    );
+    await controller.start(['Alice', 'Bob'], 1);
+    await controller.commit(0, {0: 0, 1: 0}, {0: 1, 1: 0});
+    failSave = true;
+    await expectLater(
+      controller.finishEarly(),
+      throwsA(isA<GameStorageException>()),
+    );
+    expect(controller.game!.isFinished, isFalse);
+    expect(controller.game!.history, isEmpty);
+  });
+
   test('older saved games retain entered call order and scores', () {
     final old = WhistGame(
       players: ['A', 'B', 'C'],

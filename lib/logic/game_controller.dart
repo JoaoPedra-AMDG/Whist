@@ -1,7 +1,9 @@
 import 'package:flutter/foundation.dart';
 import '../models/game.dart';
+import '../models/game_record.dart';
 import '../services/game_storage.dart';
 import 'game_rules.dart';
+import 'scoring.dart';
 import 'seating.dart';
 
 class GameController extends ChangeNotifier {
@@ -15,6 +17,7 @@ class GameController extends ChangeNotifier {
   Future<void> load() async {
     try {
       game = await _storage.load();
+      if (game?.isFinished ?? false) _archive(game!);
     } catch (error) {
       loadError = '$error';
     } finally {
@@ -39,11 +42,14 @@ class GameController extends ChangeNotifier {
       round.turnOrder = callingOrder(seats, dealer);
       dealer = nextDealer(seats, dealer);
     }
+    final previous = game == null ? null : WhistGame.fromJson(game!.toJson());
+    if (previous?.isFinished ?? false) _archive(previous!);
     final next = WhistGame(
       players: List.of(players),
       startingCards: cards,
       rounds: rounds,
       seatOrder: seats,
+      history: previous?.history,
     );
     await _storage.save(next);
     game = next;
@@ -114,8 +120,46 @@ class GameController extends ChangeNotifier {
       ..clear()
       ..addAll(wins);
     round.completed = true;
+    if (next.isFinished) _archive(next);
     await _storage.save(next);
     game = next;
     notifyListeners();
+  }
+
+  Future<void> finishEarly() async {
+    final current = game!;
+    if (current.isFinished || current.roundsPlayed == 0) {
+      throw StateError('Complete at least one round before finishing.');
+    }
+    final next = WhistGame.fromJson(current.toJson());
+    next.endedEarly = true;
+    _archive(next);
+    await _storage.save(next);
+    game = next;
+    notifyListeners();
+  }
+
+  void _archive(WhistGame target) {
+    final previous = target.history.indexWhere(
+      (record) => record.id == target.id,
+    );
+    final record = GameRecord(
+      id: target.id,
+      finishedAt:
+          previous < 0 ? DateTime.now() : target.history[previous].finishedAt,
+      endedEarly: target.endedEarly,
+      roundsPlayed: target.roundsPlayed,
+      totalRounds: target.rounds.length,
+      players: target.players,
+      scores: [
+        for (var index = 0; index < target.players.length; index++)
+          totalScore(target, index),
+      ],
+    );
+    if (previous < 0) {
+      target.history.add(record);
+    } else {
+      target.history[previous] = record;
+    }
   }
 }

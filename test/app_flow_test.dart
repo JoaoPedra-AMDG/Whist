@@ -328,4 +328,43 @@ void main() {
       expect(tester.takeException(), isNull);
     }
   });
+
+  testWidgets('early finish opens results and saved leaderboard on a phone', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    final controller = GameController(
+      storage: GameStorage(reader: () async => null, writer: (_) async {}),
+    );
+    await controller.start(['Alice', 'Bob', 'Cara'], 1);
+    await controller.commit(0, {0: 0, 1: 0, 2: 0}, {0: 1, 1: 0, 2: 0});
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildWhistTheme(),
+        home: GameScreen(controller: controller),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Finish game early'), findsOneWidget);
+    expect(
+      tester.getBottomRight(find.text('Finish game early')).dy,
+      lessThan(640),
+    );
+    await tester.tap(find.text('Finish game early'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Any calls or results'), findsOneWidget);
+    await tester.tap(find.text('Finish game'));
+    await tester.pumpAndSettle();
+    expect(find.text('Finished after 1 of 3 rounds'), findsOneWidget);
+    await tester.tap(find.text('Leaderboard & past games'));
+    await tester.pumpAndSettle();
+    expect(find.text('PREVIOUS GAMES'), findsOneWidget);
+    expect(find.textContaining('1 of 3 rounds'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }

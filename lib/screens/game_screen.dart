@@ -17,6 +17,48 @@ class GameScreen extends StatefulWidget {
 }
 
 class _GameScreenState extends State<GameScreen> {
+  bool _finishing = false;
+
+  Future<void> _finishEarly() async {
+    final game = widget.controller.game!;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Finish game now?'),
+            content: Text(
+              'Final scores will use the ${game.roundsPlayed} completed rounds. '
+              'Any calls or results entered for the current unfinished round will not count.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Keep playing'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Finish game'),
+              ),
+            ],
+          ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() => _finishing = true);
+    try {
+      await widget.controller.finishEarly();
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not save the final scores: $error Try again.'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _finishing = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
     animation: widget.controller,
@@ -268,6 +310,14 @@ class _GameScreenState extends State<GameScreen> {
                           ),
                       icon: const Icon(Icons.table_chart_outlined),
                       label: const Text('Score sheet'),
+                    ),
+                    TextButton.icon(
+                      onPressed:
+                          game.roundsPlayed == 0 || _finishing
+                              ? null
+                              : _finishEarly,
+                      icon: const Icon(Icons.flag_outlined),
+                      label: const Text('Finish game early'),
                     ),
                   ],
                 ),

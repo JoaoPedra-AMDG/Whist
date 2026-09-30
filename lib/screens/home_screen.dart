@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../logic/game_controller.dart';
 import 'game_screen.dart';
 import 'game_setup_screen.dart';
+import 'leaderboard_screen.dart';
 import 'rules_screen.dart';
 import '../theme/whist_theme.dart';
 
@@ -190,6 +191,23 @@ class HomeScreen extends StatelessWidget {
                             ),
                             const Divider(height: 1),
                           ],
+                          _MenuRow(
+                            icon: Icons.leaderboard_outlined,
+                            label: 'Leaderboard & past games',
+                            onTap:
+                                controller.loading
+                                    ? null
+                                    : () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder:
+                                            (_) => LeaderboardScreen(
+                                              controller: controller,
+                                            ),
+                                      ),
+                                    ),
+                          ),
+                          const Divider(height: 1),
                           _MenuRow(
                             icon: Icons.menu_book_outlined,
                             label: 'How to play',

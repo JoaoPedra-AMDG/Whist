@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../logic/game_controller.dart';
 import '../logic/scoring.dart';
 import 'game_setup_screen.dart';
+import 'leaderboard_screen.dart';
 import 'score_sheet_screen.dart';
 
 class FinalResultsScreen extends StatefulWidget {
@@ -54,6 +55,11 @@ class _FinalResultsScreenState extends State<FinalResultsScreen> {
                     winners.contains(' & ') ? 'Joint winners' : 'Winner',
                     textAlign: TextAlign.center,
                   ),
+                  if (game.endedEarly)
+                    Text(
+                      'Finished after ${game.roundsPlayed} of ${game.rounds.length} rounds',
+                      textAlign: TextAlign.center,
+                    ),
                   const SizedBox(height: 8),
                   Expanded(
                     child: Card(
@@ -82,7 +88,7 @@ class _FinalResultsScreenState extends State<FinalResultsScreen> {
                             const SizedBox(height: 6),
                             Text(
                               '${successfulCalls(game, current)} correct calls · '
-                              '${(successfulCalls(game, current) * 100 / game.rounds.length).round()}%',
+                              '${(successfulCalls(game, current) * 100 / game.roundsPlayed).round()}%',
                             ),
                           ],
                         ),
@@ -121,6 +127,20 @@ class _FinalResultsScreenState extends State<FinalResultsScreen> {
                           ),
                         ),
                     child: const Text('View score sheet'),
+                  ),
+                  TextButton.icon(
+                    onPressed:
+                        () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (_) => LeaderboardScreen(
+                                  controller: widget.controller,
+                                ),
+                          ),
+                        ),
+                    icon: const Icon(Icons.leaderboard_outlined),
+                    label: const Text('Leaderboard & past games'),
                   ),
                   Row(
                     children: [

@@ -1,4 +1,5 @@
 import '../logic/seating.dart';
+import 'game_record.dart';
 
 class GameRound {
   GameRound({
@@ -54,14 +55,22 @@ class WhistGame {
     required this.startingCards,
     required this.rounds,
     List<int>? seatOrder,
+    String? id,
+    this.endedEarly = false,
+    List<GameRecord>? history,
   }) : seatOrder = List.of(
          seatOrder ?? List<int>.generate(players.length, (index) => index),
-       );
+       ),
+       id = id ?? DateTime.now().microsecondsSinceEpoch.toString(),
+       history = List.of(history ?? []);
 
   final List<String> players;
   final int startingCards;
   final List<GameRound> rounds;
   final List<int> seatOrder;
+  final String id;
+  bool endedEarly;
+  final List<GameRecord> history;
 
   int dealerForRound(int index) =>
       rounds[index].dealer ?? ((players.length - 1 + index) % players.length);
@@ -74,10 +83,15 @@ class WhistGame {
     return index < 0 ? rounds.length : index;
   }
 
-  bool get isFinished => currentRoundIndex == rounds.length;
+  int get roundsPlayed => rounds.where((round) => round.completed).length;
+
+  bool get isFinished => endedEarly || currentRoundIndex == rounds.length;
 
   Map<String, Object?> toJson() => {
-    'version': 2,
+    'version': 3,
+    'id': id,
+    'endedEarly': endedEarly,
+    'history': history.map((record) => record.toJson()).toList(),
     'players': players,
     'seatOrder': seatOrder,
     'startingCards': startingCards,
@@ -92,6 +106,14 @@ class WhistGame {
       rounds:
           (json['rounds'] as List<dynamic>)
               .map((round) => GameRound.fromJson(round as Map<String, dynamic>))
+              .toList(),
+      id: json['id'] as String?,
+      endedEarly: json['endedEarly'] as bool? ?? false,
+      history:
+          (json['history'] as List<dynamic>? ?? [])
+              .map(
+                (record) => GameRecord.fromJson(record as Map<String, dynamic>),
+              )
               .toList(),
     );
     if ((json['version'] as int? ?? 1) < 2) {
